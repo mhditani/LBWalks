@@ -1,4 +1,7 @@
 using LBWalksAPI.Data;
+using LBWalksAPI.Mapper;
+using LBWalksAPI.Repository;
+using LBWalksAPI.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,12 @@ builder.Services.AddDbContext<LBWalksDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaulConnection"));
 });
+
+builder.Services.AddScoped<IRegionRepository, SQLRegionRepository>();
+builder.Services.AddScoped<IWalkRepository, SQLWalkRepository>();
+
+
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 
 var app = builder.Build();
 

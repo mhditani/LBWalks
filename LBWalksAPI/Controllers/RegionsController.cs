@@ -1,8 +1,12 @@
-﻿using LBWalksAPI.Data;
+﻿using AutoMapper;
+using LBWalksAPI.CustomActionFilter;
+using LBWalksAPI.Data;
 using LBWalksAPI.Models.Domain;
 using LBWalksAPI.Models.DTO;
+using LBWalksAPI.Repository.IRepository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LBWalksAPI.Controllers
 {
@@ -11,75 +15,91 @@ namespace LBWalksAPI.Controllers
     public class RegionsController : ControllerBase
     {
         private readonly LBWalksDbContext db;
+        private readonly IRegionRepository regionRepository;
+        private readonly IMapper mapper;
 
-        public RegionsController(LBWalksDbContext db)
+        public RegionsController(LBWalksDbContext db, IRegionRepository regionRepository, IMapper mapper)
         {
             this.db = db;
+            this.regionRepository = regionRepository;
+            this.mapper = mapper;
         }
 
 
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-           var regionsDomain =  db.Regions.ToList();
-            var regionsDto = new List<RegionDTO>();
-            foreach (var regionDomain in regionsDomain)
-            {
-                regionsDto.Add(new RegionDTO()
-                {
-                    Id = regionDomain.Id,
-                    Code = regionDomain.Code,
-                    Name = regionDomain.Name,
-                    RegionImageUrl = regionDomain.RegionImageUrl,
-                });
-            }
+            var regionsDomain = await regionRepository.GetALlAsync();
+
+            //var regionsDto = new List<RegionDTO>();
+            //foreach (var regionDomain in regionsDomain)
+            //{
+            //    regionsDto.Add(new RegionDTO()
+            //    {
+            //        Id = regionDomain.Id,
+            //        Code = regionDomain.Code,
+            //        Name = regionDomain.Name,
+            //        RegionImageUrl = regionDomain.RegionImageUrl,
+            //    });
+            //}
+
+            //Map Domain Model to DTO
+             var regionsDto = mapper.Map<List<RegionDTO>>(regionsDomain);
             return Ok(regionsDto); 
         }
 
         [HttpGet]
         [Route("{id:Guid}")]
-        public IActionResult GetById([FromRoute]Guid id)
+        public async Task<IActionResult> GetById([FromRoute]Guid id)
         {
-          var regionDomain =  db.Regions.FirstOrDefault(r => r.Id == id);
+            var regionDomain = await regionRepository.GetByIdAsync(id);
             if (regionDomain == null)
             {
                 return NotFound();
             }
-            var regionDto = new RegionDTO
-            {
-                Id = regionDomain.Id,
-                Code = regionDomain.Code,
-                Name = regionDomain.Name,
-                RegionImageUrl = regionDomain.RegionImageUrl,
-            };
-            return Ok(regionDto);
+            //var regionDto = new RegionDTO
+            //{
+            //    Id = regionDomain.Id,
+            //    Code = regionDomain.Code,
+            //    Name = regionDomain.Name,
+            //    RegionImageUrl = regionDomain.RegionImageUrl,
+            //};
+            return Ok(mapper.Map<RegionDTO>(regionDomain));
         }
 
 
 
 
         [HttpPost]
-        public IActionResult Create([FromBody] CreateRegionDto createRegionDto)
+        [ValidateModel]
+        public async Task<IActionResult> Create([FromBody] CreateRegionDto createRegionDto)
         {
-            var regionDomain = new Region
-            {
-                Code = createRegionDto.Code,
-                Name = createRegionDto.Name,
-                RegionImageUrl = createRegionDto.RegionImageUrl,
-            };
-            db.Regions.Add(regionDomain);
-            db.SaveChanges();
+           
+                var regionDomain = mapper.Map<Region>(createRegionDto);
+                regionDomain = await regionRepository.CreateAsync(regionDomain);
+                var regionDto = mapper.Map<RegionDTO>(regionDomain);
+                return CreatedAtAction(nameof(GetById), new { id = regionDomain.Id }, regionDto);
+            
+        
 
-            var regionDto = new RegionDTO
-            {
-                Id=regionDomain.Id,
-                Code = regionDomain.Code,
-                Name = regionDomain.Name,
-                RegionImageUrl = regionDomain.RegionImageUrl,
-            };
 
-            return CreatedAtAction(nameof(GetById), new {id = regionDomain.Id}, regionDto);
+            //var regionDomain = new Region
+            //{
+            //    Code = createRegionDto.Code,
+            //    Name = createRegionDto.Name,
+            //    RegionImageUrl = createRegionDto.RegionImageUrl,
+            //};
+
+
+            //var regionDto = new RegionDTO
+            //{
+            //    Id=regionDomain.Id,
+            //    Code = regionDomain.Code,
+            //    Name = regionDomain.Name,
+            //    RegionImageUrl = regionDomain.RegionImageUrl,
+            //};
+
         }
 
 
@@ -88,28 +108,39 @@ namespace LBWalksAPI.Controllers
 
         [HttpPut]
         [Route("{id:Guid}")]
-        public IActionResult Update([FromRoute]Guid id, [FromBody] UpdateRegionDto updateRegionDto)
+        [ValidateModel]
+        public async Task<IActionResult> Update([FromRoute]Guid id, [FromBody] UpdateRegionDto updateRegionDto)
         {
-           var regionDomain = db.Regions.FirstOrDefault(r => r.Id == id);
-            if (regionDomain == null)
-            {
-                return NotFound();
-            }
-            regionDomain.Code = updateRegionDto.Code;
-            regionDomain.Name = updateRegionDto.Name;
-            regionDomain.RegionImageUrl = updateRegionDto.RegionImageUrl;
+            
+                var regionDomain = mapper.Map<Region>(updateRegionDto);
+                regionDomain = await regionRepository.UpdateAsync(id, regionDomain);
+                if (regionDomain == null)
+                {
+                    return NotFound();
+                }
+                var regionDto = mapper.Map<UpdateRegionDto>(regionDomain);
+                return Ok(regionDto);
 
-            db.SaveChanges();
+       
+            //var regionDomain = new Region
+            //{
+            //    Code= updateRegionDto.Code,
+            //    Name = updateRegionDto.Name,
+            //    RegionImageUrl = updateRegionDto.RegionImageUrl,
+            //};
 
-            var regionDto = new RegionDTO
-            {
-                Id = regionDomain.Id,
-                Code = regionDomain.Code,
-                Name = regionDomain.Name,
-                RegionImageUrl = regionDomain.RegionImageUrl
-            };
 
-            return Ok(regionDto);
+
+
+
+            //var regionDto = new RegionDTO
+            //{
+            //    Id = regionDomain.Id,
+            //    Code = regionDomain.Code,
+            //    Name = regionDomain.Name,
+            //    RegionImageUrl = regionDomain.RegionImageUrl
+            //};
+
         }
 
 
@@ -119,23 +150,22 @@ namespace LBWalksAPI.Controllers
 
         [HttpDelete]
         [Route("{id:Guid}")]
-        public IActionResult Delete([FromRoute]Guid id)
+        public async Task<IActionResult> Delete([FromRoute]Guid id)
         {
-            var regionDomain = db.Regions.FirstOrDefault(r => r.Id == id);
+            var regionDomain =await regionRepository.DeleteAsync(id);
             if (regionDomain == null)
             {
                 return NotFound();
             }
-            db.Regions.Remove(regionDomain);
-            db.SaveChanges();
 
-            var regionDto = new RegionDTO
-            {
-                Id = regionDomain.Id,
-                Code = regionDomain.Code,
-                Name = regionDomain.Name,
-                RegionImageUrl = regionDomain.RegionImageUrl
-            };
+            var regionDto = mapper.Map<RegionDTO> (regionDomain);
+            //var regionDto = new RegionDTO
+            //{
+            //    Id = regionDomain.Id,
+            //    Code = regionDomain.Code,
+            //    Name = regionDomain.Name,
+            //    RegionImageUrl = regionDomain.RegionImageUrl
+            //};
 
             return Ok(regionDto);
         }

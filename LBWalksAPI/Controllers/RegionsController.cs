@@ -4,6 +4,7 @@ using LBWalksAPI.Data;
 using LBWalksAPI.Models.Domain;
 using LBWalksAPI.Models.DTO;
 using LBWalksAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ namespace LBWalksAPI.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles ="Reader")]
         public async Task<IActionResult> GetAll()
         {
             var regionsDomain = await regionRepository.GetALlAsync();
@@ -51,6 +53,7 @@ namespace LBWalksAPI.Controllers
 
         [HttpGet]
         [Route("{id:Guid}")]
+        [Authorize(Roles ="Reader")]
         public async Task<IActionResult> GetById([FromRoute]Guid id)
         {
             var regionDomain = await regionRepository.GetByIdAsync(id);
@@ -73,6 +76,7 @@ namespace LBWalksAPI.Controllers
 
         [HttpPost]
         [ValidateModel]
+        [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Create([FromBody] CreateRegionDto createRegionDto)
         {
            
@@ -109,6 +113,7 @@ namespace LBWalksAPI.Controllers
         [HttpPut]
         [Route("{id:Guid}")]
         [ValidateModel]
+        [Authorize(Roles = "Writer")]
         public async Task<IActionResult> Update([FromRoute]Guid id, [FromBody] UpdateRegionDto updateRegionDto)
         {
             
@@ -150,6 +155,7 @@ namespace LBWalksAPI.Controllers
 
         [HttpDelete]
         [Route("{id:Guid}")]
+        [Authorize(Roles = "Writer")] 
         public async Task<IActionResult> Delete([FromRoute]Guid id)
         {
             var regionDomain =await regionRepository.DeleteAsync(id);

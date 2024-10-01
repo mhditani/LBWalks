@@ -5,7 +5,7 @@ namespace LBWalksAPI.Data
 {
     public class LBWalksDbContext : DbContext
     {
-        public LBWalksDbContext(DbContextOptions options) : base(options)
+        public LBWalksDbContext(DbContextOptions<LBWalksDbContext> options) : base(options)
         {
             
         }

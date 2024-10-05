@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace LBWalksAPI.Controllers
 {
@@ -18,20 +19,25 @@ namespace LBWalksAPI.Controllers
         private readonly LBWalksDbContext db;
         private readonly IRegionRepository regionRepository;
         private readonly IMapper mapper;
+        private readonly ILogger<RegionsController> logger;
 
-        public RegionsController(LBWalksDbContext db, IRegionRepository regionRepository, IMapper mapper)
+        public RegionsController(LBWalksDbContext db, IRegionRepository regionRepository, IMapper mapper, ILogger<RegionsController> logger)
         {
             this.db = db;
             this.regionRepository = regionRepository;
             this.mapper = mapper;
+            this.logger = logger;
         }
 
 
 
         [HttpGet]
-        [Authorize(Roles ="Reader")]
+        //[Authorize(Roles ="Reader")]
         public async Task<IActionResult> GetAll()
         {
+            logger.LogInformation("GetAll Regions method was invoked");
+
+
             var regionsDomain = await regionRepository.GetALlAsync();
 
             //var regionsDto = new List<RegionDTO>();
@@ -46,14 +52,18 @@ namespace LBWalksAPI.Controllers
             //    });
             //}
 
+
             //Map Domain Model to DTO
              var regionsDto = mapper.Map<List<RegionDTO>>(regionsDomain);
+
+            logger.LogInformation($"Finished GetAll Regions Request With Data: {JsonSerializer.Serialize(regionsDomain)}");
+
             return Ok(regionsDto); 
         }
 
         [HttpGet]
         [Route("{id:Guid}")]
-        [Authorize(Roles ="Reader")]
+        //[Authorize(Roles ="Reader")]
         public async Task<IActionResult> GetById([FromRoute]Guid id)
         {
             var regionDomain = await regionRepository.GetByIdAsync(id);
@@ -76,7 +86,7 @@ namespace LBWalksAPI.Controllers
 
         [HttpPost]
         [ValidateModel]
-        [Authorize(Roles = "Writer")]
+        //[Authorize(Roles = "Writer")]
         public async Task<IActionResult> Create([FromBody] CreateRegionDto createRegionDto)
         {
            
@@ -113,7 +123,7 @@ namespace LBWalksAPI.Controllers
         [HttpPut]
         [Route("{id:Guid}")]
         [ValidateModel]
-        [Authorize(Roles = "Writer")]
+        //[Authorize(Roles = "Writer")]
         public async Task<IActionResult> Update([FromRoute]Guid id, [FromBody] UpdateRegionDto updateRegionDto)
         {
             
@@ -155,7 +165,7 @@ namespace LBWalksAPI.Controllers
 
         [HttpDelete]
         [Route("{id:Guid}")]
-        [Authorize(Roles = "Writer")] 
+        //[Authorize(Roles = "Writer")] 
         public async Task<IActionResult> Delete([FromRoute]Guid id)
         {
             var regionDomain =await regionRepository.DeleteAsync(id);
